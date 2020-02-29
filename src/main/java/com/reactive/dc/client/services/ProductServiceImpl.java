@@ -2,6 +2,7 @@ package com.reactive.dc.client.services;
 
 import com.reactive.dc.client.dto.ProductDTO;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.beans.factory.annotation.Qualifier;
 import org.springframework.core.io.buffer.DataBuffer;
 import org.springframework.http.MediaType;
 import org.springframework.http.client.MultipartBodyBuilder;
@@ -17,12 +18,13 @@ import java.util.Collections;
 @Service
 public class ProductServiceImpl implements ProductService {
 
+    @Qualifier("registerWebClient")
     @Autowired
-    private WebClient client;
+    private WebClient.Builder client;
 
     @Override
     public Flux<ProductDTO> findAll() {
-        return client.get()
+        return client.build().get()
                 .accept(MediaType.APPLICATION_JSON)
                 .exchange()
                 .flatMapMany(response -> response.bodyToFlux(ProductDTO.class));
@@ -30,7 +32,7 @@ public class ProductServiceImpl implements ProductService {
 
     @Override
     public Mono<ProductDTO> findById(String id) {
-        return client.get()
+        return client.build().get()
                 .uri("{id}", Collections.singletonMap("id", id))
                 .accept(MediaType.APPLICATION_JSON)
                 .retrieve()
@@ -41,7 +43,7 @@ public class ProductServiceImpl implements ProductService {
 
     @Override
     public Mono<ProductDTO> save(ProductDTO productDTO) {
-        return client.post()
+        return client.build().post()
                 .accept(MediaType.APPLICATION_JSON)
                 .contentType(MediaType.APPLICATION_JSON)
                 .body(BodyInserters.fromValue(productDTO))
@@ -51,7 +53,7 @@ public class ProductServiceImpl implements ProductService {
 
     @Override
     public Mono<ProductDTO> update(ProductDTO productDTO, String id) {
-        return client.put()
+        return client.build().put()
                 .uri("{id}", Collections.singletonMap("id", id))
                 .accept(MediaType.APPLICATION_JSON)
                 .contentType(MediaType.APPLICATION_JSON)
@@ -62,7 +64,7 @@ public class ProductServiceImpl implements ProductService {
 
     @Override
     public Mono<Void> delete(String id) {
-        return client.delete()
+        return client.build().delete()
                 .uri("{id}", Collections.singletonMap("id", id))
                 .retrieve()
                 .bodyToMono(Void.class);
@@ -74,7 +76,7 @@ public class ProductServiceImpl implements ProductService {
         part.asyncPart("file", file.content(), DataBuffer.class).headers(h -> {
             h.setContentDispositionFormData("file", file.filename());
         });
-        return client.post()
+        return client.build().post()
                 .uri("upload/{id}", Collections.singletonMap("id", id))
                 .contentType(MediaType.MULTIPART_FORM_DATA)
                 .body(BodyInserters.fromValue(part.build()))
